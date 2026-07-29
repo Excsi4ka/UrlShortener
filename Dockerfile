@@ -19,7 +19,7 @@ WORKDIR /app
 
 RUN addgroup --system spring && adduser --system --ingroup spring spring
 
-COPY --from=build /workspace/build/libs/*-SNAPSHOT.jar app.jar
+COPY --from=build /workspace/build/libs/app.jar app.jar
 
 USER spring:spring
 
