@@ -1,5 +1,6 @@
 package dev.excsi.urlshortener.service;
 
+import io.seruco.encoding.base62.Base62;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -19,21 +20,16 @@ public class UrlEncodingService {
             throw new IllegalArgumentException("attempt must be non-negative");
         }
 
-        return sha256Hex(longUrl + ":" + attempt).substring(0, SHORT_URL_LENGTH);
+        return base62Encoding(longUrl + ":" + attempt).substring(0, SHORT_URL_LENGTH);
     }
 
-    private String sha256Hex(String value) {
-        byte[] digest = sha256(value);
-        StringBuilder hex = new StringBuilder(digest.length * 2);
-
-        for (byte b : digest) {
-            hex.append(String.format("%02x", b));
-        }
-
-        return hex.toString();
+    private String base62Encoding(String value) {
+        byte[] hash = sha256Hash(value);
+        Base62 encoding = Base62.createInstance();
+        return new String(encoding.encode(hash));
     }
 
-    private byte[] sha256(String value) {
+    private byte[] sha256Hash(String value) {
         try {
             return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException exception) {

@@ -31,7 +31,7 @@ public class UrlController {
         this.urlRepository = urlRepository;
     }
 
-    @GetMapping("/{shortCode:[0-9a-f]{7}}")
+    @GetMapping("/{shortCode:[0-9a-zA-Z]{7}}")
     public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
         UrlEntity urlEntity = urlRepository.findById(shortCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -51,6 +51,7 @@ public class UrlController {
         UrlEntity urlEntity = createWithUniqueShortCode(longUrl);
 
         String shortUrl = ServletUriComponentsBuilder.fromRequestUri(servletRequest)
+                .scheme("https")
                 .replacePath(urlEntity.getShortCode())
                 .replaceQuery(null)
                 .build()
