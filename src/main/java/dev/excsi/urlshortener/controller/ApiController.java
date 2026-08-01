@@ -3,8 +3,7 @@ package dev.excsi.urlshortener.controller;
 import dev.excsi.urlshortener.dto.CreateUrlRequest;
 import dev.excsi.urlshortener.dto.CreateUrlResponse;
 import dev.excsi.urlshortener.entity.UrlEntity;
-import dev.excsi.urlshortener.repository.UrlRepository;
-import dev.excsi.urlshortener.service.UrlEncodingService;
+import dev.excsi.urlshortener.service.UrlHandlerService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,23 +17,20 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Optional;
 
 @RestController
-public class UrlController {
+public class ApiController {
 
-    private final UrlEncodingService shortCodeService;
+    private final UrlHandlerService urlHandlerService;
 
-    private final UrlRepository urlRepository;
-
-    public UrlController(UrlEncodingService shortCodeService, UrlRepository urlRepository) {
-        this.shortCodeService = shortCodeService;
-        this.urlRepository = urlRepository;
+    public ApiController(UrlHandlerService urlHandlerService) {
+        this.urlHandlerService = urlHandlerService;
     }
 
-    @GetMapping("/{shortCode:[0-9a-zA-Z]{7}}")
-    public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
-        UrlEntity urlEntity = urlRepository.findById(shortCode)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    @GetMapping("/{shortUrl:[0-9a-zA-Z]{7}}")
+    public ResponseEntity<Void> redirect(@PathVariable String shortUrl) {
+        UrlEntity urlEntity = urlHandlerService.getLink(shortUrl).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
                 .header(HttpHeaders.LOCATION, urlEntity.getLongUrl())
@@ -48,11 +44,15 @@ public class UrlController {
         }
 
         String longUrl = request.longUrl().strip();
-        UrlEntity urlEntity = createWithUniqueShortCode(longUrl);
+        Optional<UrlEntity> urlEntity = urlHandlerService.shortenUrl(longUrl);
+
+        if (urlEntity.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Could not generate a unique short url");
+        }
 
         String shortUrl = ServletUriComponentsBuilder.fromRequestUri(servletRequest)
                 .scheme("https")
-                .replacePath(urlEntity.getShortCode())
+                .replacePath(urlEntity.get().getShortCode())
                 .replaceQuery(null)
                 .build()
                 .toUriString();
@@ -61,21 +61,5 @@ public class UrlController {
         CreateUrlResponse response = new CreateUrlResponse(shortUrl);
 
         return ResponseEntity.created(location).body(response);
-    }
-
-    private UrlEntity createWithUniqueShortCode(String longUrl) {
-        for (int attempt = 0; attempt < 20; attempt++) {
-            String shortCode = shortCodeService.shortCodeFor(longUrl, attempt);
-            UrlEntity existingUrl = urlRepository.findById(shortCode).orElse(null);
-            if (existingUrl != null) {
-                if (existingUrl.getLongUrl().equals(longUrl)) {
-                    return existingUrl;
-                }
-                continue;
-            }
-            return urlRepository.save(new UrlEntity(shortCode, longUrl));
-        }
-
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Could not generate a unique short url");
     }
 }

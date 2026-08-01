@@ -8,7 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 @Service
-public class UrlEncodingService {
+public class EncodingService {
 
     private static final int SHORT_URL_LENGTH = 7;
 
