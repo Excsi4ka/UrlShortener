@@ -30,10 +30,10 @@ public class ApiController {
 
     @GetMapping("/{shortUrl:[0-9a-zA-Z]{7}}")
     public ResponseEntity<Void> redirect(@PathVariable String shortUrl) {
-        UrlEntity urlEntity = urlHandlerService.getLink(shortUrl).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        String longUrl = urlHandlerService.getLongUrl(shortUrl);
 
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
-                .header(HttpHeaders.LOCATION, urlEntity.getLongUrl())
+                .header(HttpHeaders.LOCATION, longUrl)
                 .build();
     }
 
