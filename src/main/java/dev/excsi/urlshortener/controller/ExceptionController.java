@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class ApiExceptionController {
+public class ExceptionController {
 
     @ExceptionHandler(UrlNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(UrlNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse("URL_NOT_FOUND", String.format("Short url %s doesn't map to anything", exception.getShortUrl())));
+                .body(new ErrorResponse("URL_NOT_FOUND", String.format("Short url '%s' doesn't map to anything", exception.getShortUrl())));
     }
 
 }

@@ -20,7 +20,7 @@ form.addEventListener("submit", async (event) => {
     result.hidden = true;
 
     try {
-        const response = await fetch("/shorten", {
+        const response = await fetch("/v1/shorten", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

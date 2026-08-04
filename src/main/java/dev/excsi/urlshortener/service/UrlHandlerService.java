@@ -4,6 +4,7 @@ import dev.excsi.urlshortener.entity.UrlEntity;
 import dev.excsi.urlshortener.exception.UrlNotFoundException;
 import dev.excsi.urlshortener.repository.UrlRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -31,15 +32,26 @@ public class UrlHandlerService {
 
     public Optional<UrlEntity> shortenUrl(String longUrl) {
         for (int attempt = 0; attempt < 20; attempt++) {
-            String shortCode = shortCodeService.shortCodeFor(longUrl, attempt);
-            UrlEntity existingUrl = urlRepository.findById(shortCode).orElse(null);
+            String shortUrl = shortCodeService.shortCodeFor(longUrl, attempt);
+            UrlEntity existingUrl = urlRepository.findById(shortUrl).orElse(null);
             if (existingUrl != null) {
                 if (existingUrl.getLongUrl().equals(longUrl)) {
                     return Optional.of(existingUrl);
                 }
                 continue;
             }
-            return Optional.of(urlRepository.save(new UrlEntity(shortCode, longUrl)));
+
+            try {
+                return Optional.of(urlRepository.saveAndFlush(new UrlEntity(shortUrl, longUrl)));
+            } catch (DataIntegrityViolationException exception) {
+                UrlEntity existingUrlAfterRace = urlRepository.findById(shortUrl).orElse(null);
+                if (existingUrlAfterRace == null) {
+                    throw exception;
+                }
+                if (existingUrlAfterRace.getLongUrl().equals(longUrl)) {
+                    return Optional.of(existingUrlAfterRace);
+                }
+            }
         }
 
         return Optional.empty();

@@ -22,11 +22,10 @@ public class RedisConfiguration {
                 .disableCachingNullValues()
                 .entryTtl(Duration.ofMinutes(10))
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer.UTF_8))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer.UTF_8));;
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer.UTF_8));
 
         return RedisCacheManagerBuilder.fromConnectionFactory(connectionFactory)
-                .withCacheConfiguration("redirects", config) //redirect cache bucker config
+                .withCacheConfiguration("redirects", config) //redirect cache bucket config
                 .build();
     }
-
 }
