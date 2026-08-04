@@ -1,6 +1,8 @@
 package dev.excsi.urlshortener.service;
 
 import dev.excsi.urlshortener.entity.ClickBucketEntity;
+import dev.excsi.urlshortener.entity.UserEntity;
+import dev.excsi.urlshortener.entity.UrlEntity;
 import dev.excsi.urlshortener.exception.UrlNotFoundException;
 import dev.excsi.urlshortener.repository.ClickBucketRepository;
 import dev.excsi.urlshortener.repository.UrlRepository;
@@ -27,8 +29,11 @@ public class AnalyticsService {
     @Transactional
     public void recordClick(String shortUrl) {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        clickBucketRepository.incrementClicks(shortUrl, today, 1);
-        urlRepository.incrementTotalClickCount(shortUrl, 1);
+        int updatedUrls = urlRepository.incrementTotalClickCount(shortUrl, 1);
+
+        if (updatedUrls > 0) {
+            clickBucketRepository.incrementClicks(shortUrl, today, 1);
+        }
     }
 
     public List<ClickBucketEntity> getClicksForDays(String shortUrl, int dayOffset) {
@@ -36,7 +41,21 @@ public class AnalyticsService {
         return clickBucketRepository.getBucketsSince(shortUrl, today.minus(Period.ofDays(dayOffset - 1)));
     }
 
+    public List<ClickBucketEntity> getClicksForDays(String shortUrl, int dayOffset, UserEntity owner) {
+        requireOwnedAnalyticsUrl(shortUrl, owner);
+        return getClicksForDays(shortUrl, dayOffset);
+    }
+
     public int getTotalClicks(String shortUrl) {
         return urlRepository.findById(shortUrl).orElseThrow(() -> new UrlNotFoundException(shortUrl)).getTotalClicks();
+    }
+
+    public int getTotalClicks(String shortUrl, UserEntity owner) {
+        return requireOwnedAnalyticsUrl(shortUrl, owner).getTotalClicks();
+    }
+
+    private UrlEntity requireOwnedAnalyticsUrl(String shortUrl, UserEntity owner) {
+        return urlRepository.findOwnedAnalyticsUrl(shortUrl, owner.getId())
+                .orElseThrow(() -> new UrlNotFoundException(shortUrl));
     }
 }

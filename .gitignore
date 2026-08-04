@@ -38,3 +38,4 @@ out/
 
 ### Production secrets ###
 production/.env
+/.env

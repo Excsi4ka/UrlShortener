@@ -2,38 +2,32 @@ package dev.excsi.urlshortener.controller;
 
 import dev.excsi.urlshortener.dto.CreateUrlRequest;
 import dev.excsi.urlshortener.dto.CreateUrlResponse;
-import dev.excsi.urlshortener.dto.DailyClicksResponse;
-import dev.excsi.urlshortener.dto.TotalClicksResponse;
-import dev.excsi.urlshortener.entity.ClickBucketEntity;
 import dev.excsi.urlshortener.entity.UrlEntity;
 import dev.excsi.urlshortener.service.AnalyticsService;
 import dev.excsi.urlshortener.service.UrlHandlerService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/v1/")
-public class V1ApiController {
+public class PublicApiController {
 
     private final AnalyticsService analyticsService;
 
     private final UrlHandlerService urlHandlerService;
 
-    public V1ApiController(AnalyticsService analyticsService, UrlHandlerService urlHandlerService) {
+    public PublicApiController(AnalyticsService analyticsService, UrlHandlerService urlHandlerService) {
         this.analyticsService = analyticsService;
         this.urlHandlerService = urlHandlerService;
     }
@@ -64,17 +58,30 @@ public class V1ApiController {
         return ResponseEntity.created(location).body(response);
     }
 
-    @GetMapping("/analytics/clicks/{shortUrl:[0-9a-zA-Z]{7}}")
-    public List<DailyClicksResponse> getClickForDays(@PathVariable String shortUrl, @RequestParam(name = "days") int days) {
-        List<ClickBucketEntity> clickBucketEntities = analyticsService.getClicksForDays(shortUrl, days);
+    @GetMapping("/{shortUrl:[0-9a-zA-Z]{7}}")
+    public ResponseEntity<Void> redirect(@PathVariable String shortUrl) {
+        String longUrl = urlHandlerService.getLongUrl(shortUrl);
 
-        return clickBucketEntities.stream()
-                .map(bucket -> new DailyClicksResponse(bucket.getId().getBucketDate(), bucket.getClicks()))
-                .toList();
+        analyticsService.recordClick(shortUrl);
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, longUrl)
+                .build();
     }
 
-    @GetMapping("/analytics/clicks/{shortUrl:[0-9a-zA-Z]{7}}/total")
-    public TotalClicksResponse getTotalClicks(@PathVariable String shortUrl) {
-        return new TotalClicksResponse(analyticsService.getTotalClicks(shortUrl));
-    }
+//    @GetMapping("/analytics/clicks/{shortUrl:[0-9a-zA-Z]{7}}")
+//    public List<DailyClicksResponse> getClickForDays(@PathVariable String shortUrl, @RequestParam(name = "days") int days, OAuth2AuthenticationToken authentication) {
+//        UserEntity user = userService.getOrCreateUser(authentication);
+//        List<ClickBucketEntity> clickBucketEntities = analyticsService.getClicksForDays(shortUrl, days, user);
+//
+//        return clickBucketEntities.stream()
+//                .map(bucket -> new DailyClicksResponse(bucket.getId().getBucketDate(), bucket.getClicks()))
+//                .toList();
+//    }
+//
+//    @GetMapping("/analytics/clicks/{shortUrl:[0-9a-zA-Z]{7}}/total")
+//    public TotalClicksResponse getTotalClicks(@PathVariable String shortUrl, OAuth2AuthenticationToken authentication) {
+//        UserEntity user = userService.getOrCreateUser(authentication);
+//        return new TotalClicksResponse(analyticsService.getTotalClicks(shortUrl, user));
+//    }
 }
