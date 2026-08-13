@@ -20,7 +20,7 @@ public class AuthController {
 
     @GetMapping("/v1/auth/me")
     public AuthUserResponse me(OAuth2AuthenticationToken authentication) {
-        UserEntity user = userService.getOrCreateUser(authentication);
+        UserEntity user = userService.getUser(authentication);
         return new AuthUserResponse(
                 user.getId(),
                 user.getProvider(),
@@ -32,6 +32,6 @@ public class AuthController {
 
     @GetMapping("/v1/auth/csrf")
     public CsrfTokenResponse csrf(CsrfToken csrfToken) {
-        return new CsrfTokenResponse(csrfToken.getHeaderName(), csrfToken.getParameterName(), csrfToken.getToken());
+        return new CsrfTokenResponse(csrfToken.getToken());
     }
 }

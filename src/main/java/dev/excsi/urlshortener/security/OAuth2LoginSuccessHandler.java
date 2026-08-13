@@ -18,7 +18,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     public OAuth2LoginSuccessHandler(UserService userService) {
         this.userService = userService;
-        setDefaultTargetUrl("/dashboard");
+        setDefaultTargetUrl("/");
         setAlwaysUseDefaultTargetUrl(true);
     }
 
@@ -29,7 +29,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             Authentication authentication
     ) throws IOException, ServletException {
         if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
-            userService.getOrCreateUser(oauthToken);
+            userService.createOrUpdateUser(oauthToken);
         }
 
         super.onAuthenticationSuccess(request, response, authentication);

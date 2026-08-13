@@ -7,7 +7,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -44,8 +43,7 @@ public class UserEntity {
     @Column(name = "picture_url", length = 2048)
     private String pictureUrl;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "owner_id")
+    @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private List<UrlEntity> urls = new ArrayList<>();
 
     protected UserEntity() {}
@@ -62,10 +60,6 @@ public class UserEntity {
         this.email = email;
         this.displayName = displayName;
         this.pictureUrl = pictureUrl;
-    }
-
-    public void addUrl(UrlEntity url) {
-        urls.add(url);
     }
 
     public Long getId() {

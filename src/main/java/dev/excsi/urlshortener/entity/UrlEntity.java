@@ -2,7 +2,10 @@ package dev.excsi.urlshortener.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -23,26 +26,22 @@ public class UrlEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime dateCreated;
 
-    @Column(name = "analytics_enabled", nullable = false)
-    private boolean hasAnalytics = false;
-
     @Column(name = "total_clicks", nullable = false)
     private int totalClicks = 0;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private UserEntity owner;
+
     protected UrlEntity() {}
 
-    public UrlEntity(String shortCode, String longUrl) {
+    public UrlEntity(String shortCode, String longUrl, UserEntity owner) {
         this.shortUrl = shortCode;
         this.longUrl = longUrl;
+        this.owner = owner;
     }
 
-    public UrlEntity(String shortCode, String longUrl, boolean hasAnalytics) {
-        this.shortUrl = shortCode;
-        this.longUrl = longUrl;
-        this.hasAnalytics = hasAnalytics;
-    }
-
-    public String getShortCode() {
+    public String getShortUrl() {
         return shortUrl;
     }
 
@@ -54,12 +53,11 @@ public class UrlEntity {
         return dateCreated;
     }
 
-    public boolean hasAnalytics() {
-        return hasAnalytics;
-    }
-
     public int getTotalClicks() {
         return totalClicks;
     }
-}
 
+    public Long getOwnerId() {
+        return owner.getId();
+    }
+}

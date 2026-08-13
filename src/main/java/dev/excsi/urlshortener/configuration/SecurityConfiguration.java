@@ -15,7 +15,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler successHandler) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler successHandler) {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -24,18 +24,15 @@ public class SecurityConfiguration {
                                 "/dashboard",
                                 "/dashboard/**",
                                 "/index.html",
-                                "/app.js",
-                                "/styles.css",
-                                "/favicon.ico",
                                 "/assets/**",
                                 "/error",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
-                                "/{shortUrl:[0-9a-zA-Z]{7}}"
+                                "/{shortUrl:[0-9a-zA-Z]{7}}",
+                                "/v1/auth/csrf",
+                                "/logo.svg"
                         ).permitAll()
-                        .requestMatchers("/shorten", "/v1/auth/csrf").permitAll()
-                        .requestMatchers("/v1/auth/me", "/v1/dashboard/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/v1/**").authenticated()
                 )
                 .oauth2Login(oauth -> oauth
                         .loginPage("/login")

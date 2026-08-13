@@ -1,4 +1,4 @@
 package dev.excsi.urlshortener.dto;
 
-public record CsrfTokenResponse(String headerName, String parameterName, String token) {
+public record CsrfTokenResponse(String token) {
 }

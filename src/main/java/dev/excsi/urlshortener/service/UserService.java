@@ -2,7 +2,9 @@ package dev.excsi.urlshortener.service;
 
 import dev.excsi.urlshortener.entity.UserEntity;
 import dev.excsi.urlshortener.repository.UserRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,30 +19,45 @@ public class UserService {
     }
 
     @Transactional
-    public UserEntity getOrCreateUser(OAuth2AuthenticationToken authentication) {
-        return upsertOAuthUser(authentication.getAuthorizedClientRegistrationId(), authentication.getPrincipal());
+    public void createOrUpdateUser(OAuth2AuthenticationToken authentication) {
+        createOrUpdateUser(authentication.getAuthorizedClientRegistrationId(), authentication.getPrincipal());
     }
 
-    @Transactional
-    public UserEntity upsertOAuthUser(String provider, OAuth2User oauthUser) {
-        String providerUserId = firstPresentAttribute(oauthUser, "sub", "id");
-        if (providerUserId == null || providerUserId.isBlank()) {
-            providerUserId = oauthUser.getName();
-        }
-
+    private void createOrUpdateUser(String provider, OAuth2User oauthUser) {
+        String providerUserId = providerUserId(oauthUser);
         String email = attributeAsString(oauthUser, "email");
         String displayName = firstPresentAttribute(oauthUser, "name", "login");
         String pictureUrl = firstPresentAttribute(oauthUser, "picture", "avatar_url");
 
-        String finalProviderUserId = providerUserId;
-        return userRepository.findByProviderAndProviderUserId(provider, finalProviderUserId)
+        userRepository.findByProviderAndProviderUserId(provider, providerUserId)
                 .map(existingUser -> {
                     existingUser.updateProfile(email, displayName, pictureUrl);
                     return existingUser;
                 })
                 .orElseGet(() -> userRepository.save(
-                        new UserEntity(provider, finalProviderUserId, email, displayName, pictureUrl)
+                        new UserEntity(provider, providerUserId, email, displayName, pictureUrl)
                 ));
+    }
+
+    @Transactional(readOnly = true)
+    public UserEntity getUser(OAuth2AuthenticationToken authentication) {
+        String provider = authentication.getAuthorizedClientRegistrationId();
+        String providerUserId = providerUserId(authentication.getPrincipal());
+
+        return userRepository.findByProviderAndProviderUserId(provider, providerUserId)
+                .orElseThrow(() -> new UsernameNotFoundException("User has not been provisioned for provider " + provider));
+    }
+
+    private String providerUserId(OAuth2User oauthUser) {
+        String providerUserId = oauthUser instanceof OidcUser oidcUser
+                ? oidcUser.getSubject()
+                : firstPresentAttribute(oauthUser, "sub", "id");
+
+        if (providerUserId == null || providerUserId.isBlank()) {
+            providerUserId = oauthUser.getName();
+        }
+
+        return providerUserId;
     }
 
     private String firstPresentAttribute(OAuth2User oauthUser, String... names) {

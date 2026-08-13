@@ -32,18 +32,6 @@ public interface UrlRepository extends JpaRepository<UrlEntity, String> {
         join user.urls url
         where user.id = :ownerId
         and url.shortUrl = :shortUrl
-        and url.hasAnalytics = true
     """)
     Optional<UrlEntity> findOwnedAnalyticsUrl(@Param("shortUrl") String shortUrl, @Param("ownerId") Long ownerId);
-
-    @Query("""
-        select url from UrlEntity url
-        where url.shortUrl = :shortUrl
-        and not exists (
-            select ownedUrl from UserEntity user
-            join user.urls ownedUrl
-            where ownedUrl.shortUrl = url.shortUrl
-        )
-    """)
-    Optional<UrlEntity> findAnonymousUrl(@Param("shortUrl") String shortUrl);
 }

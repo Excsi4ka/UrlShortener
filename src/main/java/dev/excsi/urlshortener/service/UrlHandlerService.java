@@ -20,12 +20,12 @@ public class UrlHandlerService {
 
     private final UserRepository userRepository;
 
-    private final EncodingService shortCodeService;
+    private final EncodingService encodingService;
 
-    public UrlHandlerService(UrlRepository repository, UserRepository userRepository, EncodingService shortCodeService) {
+    public UrlHandlerService(UrlRepository repository, UserRepository userRepository, EncodingService encodingService) {
         this.urlRepository = repository;
         this.userRepository = userRepository;
-        this.shortCodeService = shortCodeService;
+        this.encodingService = encodingService;
     }
 
     public UrlEntity getUrlEntity(String shortUrl) {
@@ -37,53 +37,34 @@ public class UrlHandlerService {
         return getUrlEntity(shortUrl).getLongUrl();
     }
 
-    @Transactional
-    public Optional<UrlEntity> shortenUrl(String longUrl) {
-        return shortenUrl(longUrl, false, null);
+    @Transactional(readOnly = true)
+    public List<UrlEntity> getLinksForOwner(Long ownerId) {
+        return urlRepository.findAllByOwnerId(ownerId);
     }
 
     @Transactional
-    public Optional<UrlEntity> shortenUrlWithAnalytics(String longUrl, UserEntity owner) {
-        if (owner == null || owner.getId() == null) {
-            throw new IllegalArgumentException("owner must be a persisted user");
-        }
-
-        return shortenUrl(longUrl, true, owner);
-    }
-
-    public List<UrlEntity> getLinksForOwner(UserEntity owner) {
-        return urlRepository.findAllByOwnerId(owner.getId());
-    }
-
-    private Optional<UrlEntity> shortenUrl(String longUrl, boolean hasAnalytics, UserEntity owner) {
-        UserEntity ownerReference = owner == null ? null : userRepository.getReferenceById(owner.getId());
-        String shortCodeSeed = owner == null ? longUrl : longUrl + ":owner:" + owner.getId();
+    public Optional<UrlEntity> shortenUrl(String longUrl, UserEntity owner) {
+        UserEntity ownerReference = userRepository.getReferenceById(owner.getId());
+        String shortCodeSeed = longUrl + ":owner:" + owner.getId();
 
         for (int attempt = 0; attempt < 20; attempt++) {
-            String shortUrl = shortCodeService.shortCodeFor(shortCodeSeed, attempt);
+            String shortUrl = encodingService.shortCodeFor(shortCodeSeed, attempt);
             UrlEntity existingUrl = urlRepository.findById(shortUrl).orElse(null);
             if (existingUrl != null) {
-                if (canReuse(existingUrl, longUrl, hasAnalytics, owner)) {
+                if (canReuse(existingUrl, longUrl, owner)) {
                     return Optional.of(existingUrl);
                 }
                 continue;
             }
 
             try {
-                UrlEntity newUrl = new UrlEntity(shortUrl, longUrl, hasAnalytics);
-                if (ownerReference == null) {
-                    return Optional.of(urlRepository.saveAndFlush(newUrl));
-                }
-
-                ownerReference.addUrl(newUrl);
-                userRepository.flush();
-                return Optional.of(newUrl);
+                return Optional.of(urlRepository.saveAndFlush(new UrlEntity(shortUrl, longUrl, ownerReference)));
             } catch (DataIntegrityViolationException exception) {
                 UrlEntity existingUrlAfterRace = urlRepository.findById(shortUrl).orElse(null);
                 if (existingUrlAfterRace == null) {
                     throw exception;
                 }
-                if (canReuse(existingUrlAfterRace, longUrl, hasAnalytics, owner)) {
+                if (canReuse(existingUrlAfterRace, longUrl, owner)) {
                     return Optional.of(existingUrlAfterRace);
                 }
             }
@@ -92,15 +73,11 @@ public class UrlHandlerService {
         return Optional.empty();
     }
 
-    private boolean canReuse(UrlEntity existingUrl, String longUrl, boolean hasAnalytics, UserEntity owner) {
-        if (!existingUrl.getLongUrl().equals(longUrl) || existingUrl.hasAnalytics() != hasAnalytics) {
+    private boolean canReuse(UrlEntity existingUrl, String longUrl, UserEntity owner) {
+        if (!existingUrl.getLongUrl().equals(longUrl)) {
             return false;
         }
 
-        if (owner == null) {
-            return urlRepository.findAnonymousUrl(existingUrl.getShortCode()).isPresent();
-        }
-
-        return urlRepository.findOwnedAnalyticsUrl(existingUrl.getShortCode(), owner.getId()).isPresent();
+        return existingUrl.getOwnerId().equals(owner.getId());
     }
 }

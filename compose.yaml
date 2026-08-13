@@ -10,9 +10,11 @@ services:
       POSTGRES_USER: urlshortener
       POSTGRES_PASSWORD: urlshortener
       JPA_DDL_AUTO: update
+      REDIS_URL: redis
+      REDIS_PORT: 6379
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+      - redis
 
   postgres:
     image: postgres:18.4
@@ -22,11 +24,9 @@ services:
       POSTGRES_PASSWORD: urlshortener
     volumes:
       - postgres18-data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U urlshortener -d urlshortener"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+
+  redis:
+    image: redis:8-alpine
 
 volumes:
   postgres18-data:

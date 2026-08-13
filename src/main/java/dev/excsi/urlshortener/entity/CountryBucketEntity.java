@@ -6,23 +6,23 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "device_analytics")
-public class DeviceBucketEntity {
+@Table(name = "country_analytics")
+public class CountryBucketEntity {
 
     @EmbeddedId
-    private DeviceBucketCompositePrimaryKey id;
+    private CountryBucketCompositePrimaryKey id;
 
     @Column(name = "click_count", nullable = false)
     private int clicks;
 
-    protected DeviceBucketEntity() {}
+    protected CountryBucketEntity() {}
 
-    public DeviceBucketEntity(DeviceBucketCompositePrimaryKey id, int clicks) {
+    public CountryBucketEntity(CountryBucketCompositePrimaryKey id, int clicks) {
         this.id = id;
         this.clicks = clicks;
     }
 
-    public DeviceBucketCompositePrimaryKey getId() {
+    public CountryBucketCompositePrimaryKey getId() {
         return id;
     }
 
