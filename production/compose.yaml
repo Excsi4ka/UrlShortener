@@ -11,6 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO}
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -42,6 +43,12 @@ services:
 
   redis:
     image: redis:8-alpine
+    command:
+      - redis-server
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-256mb}
+      - --maxmemory-policy
+      - ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
 
 
 volumes:

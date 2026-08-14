@@ -33,6 +33,12 @@ services:
 
   redis:
     image: redis:8-alpine
+    command:
+      - redis-server
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-256mb}
+      - --maxmemory-policy
+      - ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
 
 volumes:
   postgres18-data:
