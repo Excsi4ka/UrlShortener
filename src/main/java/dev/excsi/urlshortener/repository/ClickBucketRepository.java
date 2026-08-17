@@ -1,7 +1,9 @@
 package dev.excsi.urlshortener.repository;
 
+import dev.excsi.urlshortener.dto.TodaysClicksDTO;
 import dev.excsi.urlshortener.entity.ClickBucketEntity;
 import dev.excsi.urlshortener.entity.ClickBucketCompositePrimaryKey;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -34,4 +36,16 @@ public interface ClickBucketRepository extends JpaRepository<ClickBucketEntity, 
         where bucket.id.bucketDate <= :date
     """)
     void deleteOlderThan(@Param("date") LocalDate date);
+
+    @Query("""
+        select new dev.excsi.urlshortener.dto.TodaysClicksDTO(url.shortUrl, url.longUrl, url.dateCreated, sum(bucket.clicks)) 
+        from ClickBucketEntity bucket
+        join bucket.url url
+        where url.owner.id = :ownerId
+        and bucket.id.bucketDate = :date
+        group by url.shortUrl, url.longUrl, url.dateCreated
+        order by sum(bucket.clicks) desc
+        """
+    )
+    List<TodaysClicksDTO> getTodayClicks(@Param("ownerId") Long ownerId, @Param("date") LocalDate date, Pageable pageable);
 }

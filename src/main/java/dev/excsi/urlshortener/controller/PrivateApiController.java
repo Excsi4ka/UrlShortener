@@ -5,6 +5,7 @@ import dev.excsi.urlshortener.dto.CreateUrlResponse;
 import dev.excsi.urlshortener.dto.CountryClicksResponse;
 import dev.excsi.urlshortener.dto.DailyClicksResponse;
 import dev.excsi.urlshortener.dto.DeviceClicksResponse;
+import dev.excsi.urlshortener.dto.TodaysClicksDTO;
 import dev.excsi.urlshortener.dto.TotalClicksResponse;
 import dev.excsi.urlshortener.entity.ClickBucketEntity;
 import dev.excsi.urlshortener.entity.CountryBucketEntity;
@@ -84,6 +85,12 @@ public class PrivateApiController {
         return clickBucketEntities.stream()
                 .map(bucket -> new DailyClicksResponse(bucket.getId().getBucketDate(), bucket.getClicks()))
                 .toList();
+    }
+
+    @GetMapping("/links/analytics/today")
+    public List<TodaysClicksDTO> getTopLinksToday(OAuth2AuthenticationToken authentication) {
+        UserEntity user = userService.getUser(authentication);
+        return analyticsService.getTopLinksToday(user.getId());
     }
 
     @GetMapping("/links/{shortUrl:[0-9a-zA-Z]{7}}/analytics/total")

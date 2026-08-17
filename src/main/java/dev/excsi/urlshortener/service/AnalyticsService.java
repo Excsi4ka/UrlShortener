@@ -1,5 +1,6 @@
 package dev.excsi.urlshortener.service;
 
+import dev.excsi.urlshortener.dto.TodaysClicksDTO;
 import dev.excsi.urlshortener.entity.ClickBucketEntity;
 import dev.excsi.urlshortener.entity.CountryBucketEntity;
 import dev.excsi.urlshortener.entity.DeviceBucketEntity;
@@ -11,6 +12,7 @@ import dev.excsi.urlshortener.repository.ClickBucketRepository;
 import dev.excsi.urlshortener.repository.CountryBucketRepository;
 import dev.excsi.urlshortener.repository.DeviceBucketRepository;
 import dev.excsi.urlshortener.repository.UrlRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,8 @@ import java.util.Locale;
 public class AnalyticsService {
 
     private static final String UNKNOWN_COUNTRY_CODE = "ZZ";
+
+    private static final int TOP_LINKS_LIMIT = 10;
 
     private final ClickBucketRepository clickBucketRepository;
 
@@ -50,6 +54,11 @@ public class AnalyticsService {
             deviceBucketRepository.incrementClicks(shortUrl, deviceType(userAgent, userAgentMobile, userAgentPlatform).name(), 1);
             countryBucketRepository.incrementClicks(shortUrl, countryCode(country), 1);
         }
+    }
+
+    public List<TodaysClicksDTO> getTopLinksToday(Long userId) {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        return clickBucketRepository.getTodayClicks(userId, today, PageRequest.of(0, TOP_LINKS_LIMIT));
     }
 
     public List<ClickBucketEntity> getClicksForDays(String shortUrl, int dayOffset) {

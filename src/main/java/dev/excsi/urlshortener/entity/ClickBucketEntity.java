@@ -3,6 +3,9 @@ package dev.excsi.urlshortener.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -11,6 +14,10 @@ public class ClickBucketEntity {
 
     @EmbeddedId
     private ClickBucketCompositePrimaryKey id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "short_url", nullable = false, insertable = false, updatable = false)
+    private UrlEntity url;
 
     @Column(name = "click_count", nullable = false)
     private int clicks;
@@ -24,6 +31,10 @@ public class ClickBucketEntity {
 
     public ClickBucketCompositePrimaryKey getId() {
         return id;
+    }
+
+    public UrlEntity getUrl() {
+        return url;
     }
 
     public int getClicks() {

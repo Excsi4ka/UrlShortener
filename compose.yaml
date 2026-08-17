@@ -9,7 +9,6 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/urlshortener
       POSTGRES_USER: urlshortener
       POSTGRES_PASSWORD: urlshortener
-      JPA_DDL_AUTO: update
       REDIS_HOST: redis
       REDIS_PORT: 6379
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
